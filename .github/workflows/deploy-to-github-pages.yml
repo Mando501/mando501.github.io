@@ -41,6 +41,12 @@ jobs:
     - name: Add .nojekyll file
       run: touch release/wwwroot/.nojekyll
       
+    - name: List published files
+      run: ls -la release/wwwroot/
+      
+    - name: Check index.html content
+      run: head -20 release/wwwroot/index.html
+      
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3
       with:
