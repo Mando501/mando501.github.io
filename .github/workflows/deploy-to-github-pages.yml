@@ -38,9 +38,6 @@ jobs:
     - name: Publish
       run: dotnet publish TimeStoneReport.csproj -c Release -o release --nologo
       
-    - name: Change base-tag in index.html
-      run: sed -i 's/<base href="\/" \/>/<base href="\/mando501.github.io\/" \/>/g' release/wwwroot/index.html
-      
     - name: Add .nojekyll file
       run: touch release/wwwroot/.nojekyll
       
