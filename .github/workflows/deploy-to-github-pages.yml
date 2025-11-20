@@ -6,6 +6,12 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   deploy-to-github-pages:
     runs-on: ubuntu-latest
@@ -25,7 +31,7 @@ jobs:
 
     # Change base href in index.html from '/' to your GitHub repository name
     - name: Change base-tag in index.html
-      run: sed -i 's/<base href="\/" \/>/<base href="\/TimeStoneReport\/" \/>/g' release/wwwroot/index.html
+      run: sed -i 's/<base href="\/" \/>/<base href="\/mando501.github.io\/" \/>/g' release/wwwroot/index.html
 
     # Add .nojekyll file to tell GitHub pages to not treat this as a Jekyll project
     - name: Add .nojekyll file
@@ -37,3 +43,4 @@ jobs:
       with:
         folder: release/wwwroot
         branch: gh-pages
+        token: ${{ secrets.GITHUB_TOKEN }}
