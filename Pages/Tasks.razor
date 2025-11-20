@@ -1,0 +1,153 @@
+@page "/tasks"
+@inject MockDataService DataService
+@inject NavigationManager Navigation
+
+<PageTitle>TimeStone - Tasks</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">
+    <MudIcon Icon="@Icons.Material.Filled.Task" Size="Size.Large" Class="mr-2" />
+    Task Management
+</MudText>
+<MudText Typo="Typo.body1" Class="mb-4" Color="Color.Secondary">
+    View and manage your tasks with time tracking records
+</MudText>
+
+<!-- Action Bar -->
+<MudPaper Elevation="1" Class="pa-3 mb-4">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h6">@DataService.Tasks.Count Total Tasks</MudText>
+        <MudButton Variant="Variant.Filled" 
+                   Color="Color.Primary" 
+                   StartIcon="@Icons.Material.Filled.Assessment"
+                   Href="/generate-report">
+            Generate Report
+        </MudButton>
+    </MudStack>
+</MudPaper>
+
+<!-- Statistics Cards -->
+<MudGrid Class="mb-4">
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Elevation="2">
+            <MudCardContent Class="text-center">
+                <MudIcon Icon="@Icons.Material.Filled.TaskAlt" Color="Color.Success" Size="Size.Large" />
+                <MudText Typo="Typo.h4" Color="Color.Success">@_completedCount</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Completed</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Elevation="2">
+            <MudCardContent Class="text-center">
+                <MudIcon Icon="@Icons.Material.Filled.PendingActions" Color="Color.Warning" Size="Size.Large" />
+                <MudText Typo="Typo.h4" Color="Color.Warning">@_pendingCount</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Pending</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Elevation="2">
+            <MudCardContent Class="text-center">
+                <MudIcon Icon="@Icons.Material.Filled.Folder" Color="Color.Primary" Size="Size.Large" />
+                <MudText Typo="Typo.h4" Color="Color.Primary">@DataService.Projects.Count</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Projects</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Elevation="2">
+            <MudCardContent Class="text-center">
+                <MudIcon Icon="@Icons.Material.Filled.Timer" Color="Color.Info" Size="Size.Large" />
+                <MudText Typo="Typo.h4" Color="Color.Info">@_totalHours</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Total Hours</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+<!-- Tasks Table -->
+<MudPaper Elevation="3">
+    <MudTable Items="@DataService.Tasks" Hover="true" Striped="true" Dense="true">
+        <HeaderContent>
+            <MudTh>Priority</MudTh>
+            <MudTh>Title</MudTh>
+            <MudTh>Project</MudTh>
+            <MudTh>Due Date</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>Time Spent</MudTh>
+            <MudTh>Records</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Priority">
+                <MudChip T="string" Size="Size.Small" Color="@GetPriorityColor(context.Priority)">
+                    @context.Priority
+                </MudChip>
+            </MudTd>
+            <MudTd DataLabel="Title">
+                <MudText Typo="Typo.body2" Style="font-weight: 500;">@context.Title</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@context.Description</MudText>
+            </MudTd>
+            <MudTd DataLabel="Project">
+                @if (context.ProjectId.HasValue)
+                {
+                    var project = DataService.GetProjectById(context.ProjectId.Value);
+                    if (project != null)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Primary">@project.Code</MudChip>
+                    }
+                }
+                else
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Unassigned</MudText>
+                }
+            </MudTd>
+            <MudTd DataLabel="Due Date">
+                <MudText Typo="Typo.body2">@context.DueDate.ToString("MMM dd, yyyy")</MudText>
+            </MudTd>
+            <MudTd DataLabel="Status">
+                @if (context.IsCompleted)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Icon="@Icons.Material.Filled.CheckCircle">
+                        Completed
+                    </MudChip>
+                }
+                else if (context.DueDate < DateTime.Now)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Error" Icon="@Icons.Material.Filled.Warning">
+                        Overdue
+                    </MudChip>
+                }
+                else
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Filled.Schedule">
+                        Pending
+                    </MudChip>
+                }
+            </MudTd>
+            <MudTd DataLabel="Time Spent">
+                <MudText Typo="Typo.body2">@context.TimeSpent.TotalHours.ToString("F2") hrs</MudText>
+            </MudTd>
+            <MudTd DataLabel="Records">
+                <MudText Typo="Typo.body2">@context.TimeRecords.Count</MudText>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+</MudPaper>
+
+@code {
+    private int _completedCount => DataService.Tasks.Count(t => t.IsCompleted);
+    private int _pendingCount => DataService.Tasks.Count(t => !t.IsCompleted);
+    private string _totalHours => DataService.Tasks.Sum(t => t.TimeSpent.TotalHours).ToString("F1");
+
+    private Color GetPriorityColor(PriorityLevel priority)
+    {
+        return priority switch
+        {
+            PriorityLevel.Low => Color.Info,
+            PriorityLevel.Medium => Color.Primary,
+            PriorityLevel.High => Color.Warning,
+            PriorityLevel.Critical => Color.Error,
+            _ => Color.Default
+        };
+    }
+}

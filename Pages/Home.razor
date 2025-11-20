@@ -1,0 +1,75 @@
+﻿@page "/"
+@inject MockDataService DataService
+
+<PageTitle>TimeStone - Home</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">
+    <MudIcon Icon="@Icons.Material.Filled.AccessTime" Size="Size.Large" Class="mr-2" />
+    Welcome to TimeStone
+</MudText>
+<MudText Typo="Typo.body1" Class="mb-4">
+    Track your time, manage your tasks, and generate comprehensive time reports for billing and analysis.
+</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudPaper Elevation="3" Class="pa-4">
+            <MudText Typo="Typo.h5" GutterBottom="true">
+                <MudIcon Icon="@Icons.Material.Filled.Task" Class="mr-2" />
+                Quick Stats
+            </MudText>
+            <MudDivider Class="mb-3" />
+            <MudText Typo="Typo.body1" Class="mb-2">
+                <strong>Total Tasks:</strong> @DataService.Tasks.Count
+            </MudText>
+            <MudText Typo="Typo.body1" Class="mb-2">
+                <strong>Active Projects:</strong> @DataService.Projects.Count
+            </MudText>
+            <MudText Typo="Typo.body1" Class="mb-2">
+                <strong>Completed Tasks:</strong> @DataService.Tasks.Count(t => t.IsCompleted)
+            </MudText>
+            <MudText Typo="Typo.body1">
+                <strong>Total Hours Logged:</strong> @DataService.Tasks.Sum(t => t.TimeSpent.TotalHours).ToString("F1")
+            </MudText>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+        <MudPaper Elevation="3" Class="pa-4">
+            <MudText Typo="Typo.h5" GutterBottom="true">
+                <MudIcon Icon="@Icons.Material.Filled.Assessment" Class="mr-2" />
+                Generate Report
+            </MudText>
+            <MudDivider Class="mb-3" />
+            <MudText Typo="Typo.body1" Class="mb-3">
+                Create detailed time reports for billing and project tracking. Export reports in Markdown format for easy documentation.
+            </MudText>
+            <MudButton Variant="Variant.Filled" 
+                       Color="Color.Primary" 
+                       Size="Size.Large"
+                       StartIcon="@Icons.Material.Filled.Assessment"
+                       Href="/generate-report"
+                       FullWidth="true">
+                Generate Time Report
+            </MudButton>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+<MudGrid Class="mt-4">
+    <MudItem xs="12">
+        <MudPaper Elevation="2" Class="pa-4">
+            <MudText Typo="Typo.h5" GutterBottom="true">Getting Started</MudText>
+            <MudDivider Class="mb-3" />
+            <MudText Typo="Typo.body1" Class="mb-2">
+                <strong>1.</strong> View your <MudLink Href="/tasks">Tasks</MudLink> to see all tracked work
+            </MudText>
+            <MudText Typo="Typo.body1" Class="mb-2">
+                <strong>2.</strong> Browse <MudLink Href="/projects">Projects</MudLink> to organize your work
+            </MudText>
+            <MudText Typo="Typo.body1">
+                <strong>3.</strong> Use <MudLink Href="/generate-report">Generate Report</MudLink> to create time reports for billing
+            </MudText>
+        </MudPaper>
+    </MudItem>
+</MudGrid>

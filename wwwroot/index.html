@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TimeStone - Report Generator</title>
+    <base href="/" />
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+</head>
+
+<body>
+    <div id="app">
+        <div style="display: flex; align-items: center; justify-content: center; height: 100vh;">
+            <div style="text-align: center;">
+                <h3>Loading TimeStone...</h3>
+                <div style="margin-top: 20px;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="." class="reload">Reload</a>
+        <span class="dismiss">🗙</span>
+    </div>
+    
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+    <script src="_framework/blazor.webassembly.js"></script>
+    <script>
+        // File System Access API for saving files
+        window.saveFileAs = async function (fileName, contentBase64) {
+            try {
+                // Convert base64 to blob
+                const byteCharacters = atob(contentBase64);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: 'text/markdown' });
+
+                // Check if File System Access API is supported
+                if ('showSaveFilePicker' in window) {
+                    const opts = {
+                        suggestedName: fileName,
+                        types: [{
+                            description: 'Markdown Files',
+                            accept: { 'text/markdown': ['.md'] }
+                        }]
+                    };
+                    
+                    const handle = await window.showSaveFilePicker(opts);
+                    const writable = await handle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+                    return true;
+                } else {
+                    // Fallback to download
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    return true;
+                }
+            } catch (err) {
+                if (err.name === 'AbortError') {
+                    return false; // User cancelled
+                }
+                console.error('Error saving file:', err);
+                throw err;
+            }
+        };
+    </script>
+</body>
+
+</html>

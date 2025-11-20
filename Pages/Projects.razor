@@ -1,0 +1,61 @@
+@page "/projects"
+@inject MockDataService DataService
+
+<PageTitle>TimeStone - Projects</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">
+    <MudIcon Icon="@Icons.Material.Filled.Folder" Size="Size.Large" Class="mr-2" />
+    Projects
+</MudText>
+<MudText Typo="Typo.body1" Class="mb-4" Color="Color.Secondary">
+    Organize your work into projects for better time tracking and reporting
+</MudText>
+
+<MudGrid>
+    @foreach (var project in DataService.Projects)
+    {
+        var projectTasks = DataService.GetTasksByProject(project.Id).ToList();
+        var totalHours = projectTasks.Sum(t => t.TimeSpent.TotalHours);
+        
+        <MudItem xs="12" md="6" lg="4">
+            <MudCard Elevation="3">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">@project.Name</MudText>
+                        <MudChip T="string" Size="Size.Small" Color="Color.Primary">@project.Code</MudChip>
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                        <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" />
+                    </CardHeaderActions>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudText Typo="Typo.body2" Class="mb-3">@project.Description</MudText>
+                    
+                    <MudDivider Class="mb-2" />
+                    
+                    <MudGrid Spacing="1">
+                        <MudItem xs="6">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Tasks</MudText>
+                            <MudText Typo="Typo.h6">@projectTasks.Count</MudText>
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Total Hours</MudText>
+                            <MudText Typo="Typo.h6">@totalHours.ToString("F1")</MudText>
+                        </MudItem>
+                    </MudGrid>
+
+                    <MudDivider Class="my-2" />
+
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        Created: @project.CreatedDate.ToString("MMM dd, yyyy")
+                    </MudText>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Visibility">
+                        View Tasks
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+    }
+</MudGrid>

@@ -1,0 +1,271 @@
+@page "/generate-report"
+@inject MockDataService DataService
+@inject ReportGenerationService ReportService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>TimeStone - Generate Report</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">
+    <MudIcon Icon="@Icons.Material.Filled.Assessment" Size="Size.Large" Class="mr-2" />
+    Generate Time Report
+</MudText>
+<MudText Typo="Typo.body1" Class="mb-4" Color="Color.Secondary">
+    Create a detailed time report for billing and project tracking
+</MudText>
+
+<MudPaper Elevation="3" Class="pa-6">
+    <MudGrid>
+        <!-- Date Range -->
+        <MudItem xs="12">
+            <MudText Typo="Typo.h6" GutterBottom="true">
+                <MudIcon Icon="@Icons.Material.Filled.DateRange" Class="mr-2" />
+                Date Range
+            </MudText>
+        </MudItem>
+
+        <MudItem xs="12" sm="6">
+            <MudDatePicker @bind-Date="_startDate" 
+                           Label="Start Date" 
+                           Variant="Variant.Outlined"
+                           Required="true"
+                           MaxDate="@_endDate" />
+        </MudItem>
+
+        <MudItem xs="12" sm="6">
+            <MudDatePicker @bind-Date="_endDate" 
+                           Label="End Date" 
+                           Variant="Variant.Outlined"
+                           Required="true"
+                           MinDate="@_startDate" />
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Currently showing: <strong>@_startDate?.ToString("MMM dd, yyyy")</strong> to <strong>@_endDate?.ToString("MMM dd, yyyy")</strong>
+            </MudText>
+        </MudItem>
+
+        <MudItem xs="12" Class="mt-4">
+            <MudDivider />
+        </MudItem>
+
+        <!-- Project Selection -->
+        <MudItem xs="12" Class="mt-4">
+            <MudText Typo="Typo.h6" GutterBottom="true">
+                <MudIcon Icon="@Icons.Material.Filled.Folder" Class="mr-2" />
+                Project Filter (Optional)
+            </MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Select zero or more projects to include in the report. Leave empty to include all projects.
+            </MudText>
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudSelect T="int" 
+                       MultiSelection="true" 
+                       @bind-SelectedValues="_selectedProjectIds" 
+                       Label="Select Projects" 
+                       Variant="Variant.Outlined"
+                       AnchorOrigin="Origin.BottomCenter">
+                @foreach (var project in DataService.Projects)
+                {
+                    <MudSelectItem T="int" Value="@project.Id">
+                        @project.Code - @project.Name
+                    </MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        @if (_selectedProjectIds.Any())
+        {
+            <MudItem xs="12">
+                <MudText Typo="Typo.body2">
+                    <strong>Selected Projects:</strong>
+                </MudText>
+                <MudChipSet T="string">
+                    @foreach (var projectId in _selectedProjectIds)
+                    {
+                        var project = DataService.GetProjectById(projectId);
+                        if (project != null)
+                        {
+                            <MudChip T="string" Color="Color.Primary" Size="Size.Small" OnClose="() => RemoveProject(projectId)">
+                                @project.Code
+                            </MudChip>
+                        }
+                    }
+                </MudChipSet>
+            </MudItem>
+        }
+
+        <MudItem xs="12" Class="mt-4">
+            <MudDivider />
+        </MudItem>
+
+        <!-- Preview Section -->
+        <MudItem xs="12" Class="mt-4">
+            <MudText Typo="Typo.h6" GutterBottom="true">
+                <MudIcon Icon="@Icons.Material.Filled.Preview" Class="mr-2" />
+                Report Preview
+            </MudText>
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudPaper Elevation="1" Class="pa-4" Style="background-color: #f5f5f5;">
+                @{
+                    var previewTasks = GetFilteredTasks();
+                    var previewHours = previewTasks.Sum(t => t.GetTimeSpentInRange(_startDate ?? DateTime.MinValue, _endDate ?? DateTime.MaxValue).TotalHours);
+                }
+                <MudGrid>
+                    <MudItem xs="6" sm="3">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Tasks</MudText>
+                        <MudText Typo="Typo.h6">@previewTasks.Count()</MudText>
+                    </MudItem>
+                    <MudItem xs="6" sm="3">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Projects</MudText>
+                        <MudText Typo="Typo.h6">@(_selectedProjectIds.Any() ? _selectedProjectIds.Count() : DataService.Projects.Count)</MudText>
+                    </MudItem>
+                    <MudItem xs="6" sm="3">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Total Hours</MudText>
+                        <MudText Typo="Typo.h6">@previewHours.ToString("F2")</MudText>
+                    </MudItem>
+                    <MudItem xs="6" sm="3">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Date Range</MudText>
+                        <MudText Typo="Typo.h6">@((_endDate - _startDate)?.Days + 1) days</MudText>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Action Buttons -->
+        <MudItem xs="12" Class="mt-6">
+            <MudStack Row="true" Spacing="3" Justify="Justify.FlexEnd">
+                <MudButton Variant="Variant.Outlined" 
+                           Color="Color.Default" 
+                           StartIcon="@Icons.Material.Filled.Cancel"
+                           OnClick="Cancel">
+                    Cancel
+                </MudButton>
+                <MudButton Variant="Variant.Filled" 
+                           Color="Color.Primary" 
+                           StartIcon="@Icons.Material.Filled.Download"
+                           OnClick="GenerateReportAsync"
+                           Disabled="@_isGenerating">
+                    @if (_isGenerating)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        <span>Generating...</span>
+                    }
+                    else
+                    {
+                        <span>Generate Report</span>
+                    }
+                </MudButton>
+            </MudStack>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@code {
+    private DateTime? _startDate;
+    private DateTime? _endDate;
+    private IEnumerable<int> _selectedProjectIds = new HashSet<int>();
+    private bool _isGenerating = false;
+
+    protected override void OnInitialized()
+    {
+        // Default date range: first to last day of current month (as per UR-024)
+        var now = DateTime.Now;
+        _startDate = new DateTime(now.Year, now.Month, 1);
+        _endDate = _startDate.Value.AddMonths(1).AddDays(-1);
+    }
+
+    private IEnumerable<TimeStoneTask> GetFilteredTasks()
+    {
+        if (!_startDate.HasValue || !_endDate.HasValue)
+            return Enumerable.Empty<TimeStoneTask>();
+
+        return DataService.GetTasksByProjectsInDateRange(
+            _selectedProjectIds, 
+            _startDate.Value, 
+            _endDate.Value);
+    }
+
+    private void RemoveProject(int projectId)
+    {
+        _selectedProjectIds = _selectedProjectIds.Where(id => id != projectId).ToList();
+    }
+
+    private async Task GenerateReportAsync()
+    {
+        if (!_startDate.HasValue || !_endDate.HasValue)
+        {
+            Snackbar.Add("Please select valid date range!", Severity.Error);
+            return;
+        }
+
+        try
+        {
+            _isGenerating = true;
+            StateHasChanged();
+
+            // Get filtered tasks based on criteria
+            var tasks = GetFilteredTasks().ToList();
+
+            if (!tasks.Any())
+            {
+                Snackbar.Add("No tasks found matching the selected criteria.", Severity.Warning);
+                _isGenerating = false;
+                return;
+            }
+
+            // Generate markdown report
+            var reportContent = ReportService.GenerateMarkdownReport(
+                tasks,
+                DataService.Projects,
+                _startDate.Value,
+                _endDate.Value,
+                _selectedProjectIds
+            );
+
+            // Use browser's file picker to save
+            var fileName = $"TimeReport_{DateTime.Now:yyyy-MM}.md";
+            var saved = await ReportService.SaveReportWithPickerAsync(reportContent, fileName);
+
+            if (!saved)
+            {
+                Snackbar.Add("File save cancelled.", Severity.Info);
+                _isGenerating = false;
+                return;
+            }
+
+            Snackbar.Add($"Report saved successfully!", Severity.Success);
+
+            // Wait a moment before navigating back
+            await Task.Delay(1000);
+            
+            // Navigate back to Tasks view (Main flow step 9 in UR-024)
+            Navigation.NavigateTo("/tasks");
+        }
+        catch (Exception ex)
+        {
+            // I/O Error Exception Flow in UR-024
+            Snackbar.Add($"Error generating report: {ex.Message}", Severity.Error);
+            
+            // Return to main Task view even on error (Exception Flow in UR-024)
+            await Task.Delay(2000);
+            Navigation.NavigateTo("/tasks");
+        }
+        finally
+        {
+            _isGenerating = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        // Alternative Flow: Cancel (UR-024)
+        // Navigate back to Tasks view
+        Navigation.NavigateTo("/tasks");
+    }
+}
